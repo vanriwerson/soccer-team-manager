@@ -22,6 +22,12 @@ app.use(express.json());
 
 app.get('/', (req, res) => res.status(OK).json({ message: 'Olá Mundo!' }));
 app.get('/teams', (req, res) => res.status(200).json({ teams }));
+app.get('/teams/:id', (req, res) => {
+  const { id } = req.params;
+  const selectedTeam = teams.find((team) => team.id === Number(id));
+
+  res.status(200).json({ selectedTeam });
+});
 
 app.post('/teams', (req, res) => {
   const newTeam = { ...req.body };
