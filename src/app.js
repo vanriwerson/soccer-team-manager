@@ -1,65 +1,74 @@
 const express = require('express');
 
-const teams = [
-  {
-    id: 1,
-    name: 'São Paulo Futebol Clube',
-    initials: 'SPF',
-  },
-  {
-    id: 2,
-    name: 'Clube Atlético Mineiro',
-    initials: 'CAM',
-  },
-];
-
-const OK = 200;
-const CREATED = 201;
-
 const app = express();
+
+let nextId = 3;
+const teams = [
+  { id: 1, nome: 'São Paulo Futebol Clube', sigla: 'SPF' },
+  { id: 2, nome: 'Sociedade Esportiva Palmeiras', sigla: 'PAL' },
+];
 
 app.use(express.json());
 
-app.get('/', (req, res) => res.status(OK).json({ message: 'Olá Mundo!' }));
-app.get('/teams', (req, res) => res.status(200).json({ teams }));
+app.get('/teams', (req, res) => res.json(teams));
+
 app.get('/teams/:id', (req, res) => {
-  const { id } = req.params;
-  const selectedTeam = teams.find((team) => team.id === Number(id));
-
-  res.status(200).json({ selectedTeam });
-});
-
-app.post('/teams', (req, res) => {
-  const newTeam = { ...req.body };
-  teams.push(newTeam);
-
-  res.status(CREATED).json({ team: newTeam });
-});
-
-app.put('/teams/:id', (req, res) => {
-  const { id } = req.params;
-  const { name, initials } = req.body;
-  let updatedTeam;
-
-  for (let i = 0; i < teams.length; i += 1) {
-    const team = teams[i];
-
-    if (team.id === Number(id)) {
-      team.name = name;
-      team.initials = initials;
-      updatedTeam = team;
-    }
+  const id = Number(req.params.id);
+  const team = teams.find((t) => t.id === id);
+  if (team) {
+    res.json(team);
+  } else {
+    res.sendStatus(404);
   }
-
-  res.status(200).json({ updatedTeam });
 });
 
-app.delete('/teams/:id', (req, res) => {
-  const { id } = req.params;
-  const arrayPosition = teams.findIndex((team) => team.id === Number(id));
-  teams.splice(arrayPosition, 1);
+const validateTeam = (req, res, next) => {
+  const requiredProperties = ['nome', 'sigla'];
+  if (requiredProperties.every((property) => property in req.body)) {
+    next(); // Chama o próximo middleware
+  } else {
+    res.sendStatus(400); // Ou já responde avisando que deu errado
+  }
+};
 
-  res.status(200).end();
+// Arranja os middlewares para chamar validateTeam primeiro
+app.post('/teams', validateTeam, (req, res) => {
+  const team = { id: nextId, ...req.body };
+  teams.push(team);
+  nextId += 1;
+  res.status(201).json(team);
+});
+
+const existingId = (req, res, next) => {
+  const id = Number(req.params.id);
+  if (teams.some((t) => t.id === id)) {
+    next(); // Chama o próximo middleware
+  } else {
+    res.sendStatus(400); // Ou já responde avisando que deu errado
+  }
+};
+
+app.put('/teams/:id', validateTeam, existingId, (req, res) => {
+  const id = Number(req.params.id);
+  const team = teams.find((t) => t.id === id);
+  if (team) {
+    const index = teams.indexOf(team);
+    const updated = { id, ...req.body };
+    teams.splice(index, 1, updated);
+    res.status(201).json(updated);
+  } else {
+    res.sendStatus(400);
+  }
+});
+
+app.delete('/teams/:id', existingId, (req, res) => {
+  const id = Number(req.params.id);
+  const team = teams.find((t) => t.id === id);
+  if (team) {
+    const index = teams.indexOf(team);
+    teams.splice(index, 1);
+  }
+  res.sendStatus(200);
 });
 
 module.exports = app;
