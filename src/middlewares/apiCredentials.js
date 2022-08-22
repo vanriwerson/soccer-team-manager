@@ -1,6 +1,5 @@
 const fs = require('fs/promises');
 
-// como vamos ler arquivos assincronamente, precisamos do async
 module.exports = async function apiCredentials(req, res, next) {
   // pega o token do cabeçalho, se houver
   const token = req.header('X-API-TOKEN');
@@ -10,6 +9,8 @@ module.exports = async function apiCredentials(req, res, next) {
   const authorized = JSON.parse(authdata);
 
   if (token in authorized) {
+    // modifica o req para guardar a informação importante
+    req.teams = authorized[token];
     next(); // pode continuar
   } else {
     const UNAUTHORIZED = 401;

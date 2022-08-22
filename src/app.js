@@ -27,6 +27,14 @@ app.get('/teams/:id', (req, res) => {
 
 // Arranja os middlewares para chamar validateTeam primeiro
 app.post('/teams', validateTeam, (req, res) => {
+  if (
+    // confere se a sigla proposta está inclusa nos times autorizados
+    !req.teams.teams.includes(req.body.sigla)
+    // confere se já não existe um time com essa sigla
+    && teams.every((t) => t.sigla !== req.body.sigla)
+  ) {
+    return res.sendStatus(401);
+  }
   const team = { id: nextId, ...req.body };
   teams.push(team);
   nextId += 1;
