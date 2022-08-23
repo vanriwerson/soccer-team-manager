@@ -1,5 +1,6 @@
 const express = require('express');
 require('express-async-errors');
+const morgan = require('morgan');
 
 const teams = require('./files/teams');
 const apiCredentials = require('./middlewares/apiCredentials');
@@ -7,6 +8,8 @@ const validateTeam = require('./middlewares/validateTeam');
 const existingId = require('./middlewares/existingId');
 
 const app = express();
+app.use(morgan('dev'));
+app.use(express.static('./images'));
 
 let nextId = 5;
 
