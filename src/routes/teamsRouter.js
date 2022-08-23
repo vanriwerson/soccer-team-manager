@@ -1,19 +1,25 @@
 const express = require('express');
 
-const teams = require('../files/teams');
-const apiCredentials = require('../middlewares/apiCredentials');
+// os requires são relativos ao arquivo, então o path muda ligeiramente
 const validateTeam = require('../middlewares/validateTeam');
-const existingId = require('../middlewares/existingId');
+const apiCredentials = require('../middlewares/apiCredentials');
 
+// cria um router middleware
 const router = express.Router();
 
-let nextId = 5;
+let nextId = 3;
+const teams = [
+  { id: 1, nome: 'São Paulo Futebol Clube', sigla: 'SPF' },
+  { id: 2, nome: 'Sociedade Esportiva Palmeiras', sigla: 'PAL' },
+];
 
+// o path é relativo à rota em que o router foi montado (2)
+router.get('/', (req, res) => res.json(teams));
+
+// configurações globais afetam apenas este router (3)
 router.use(apiCredentials);
 
-router.get('/teams', (req, res) => res.json(teams));
-
-router.get('/teams/:id', (req, res) => {
+router.get('/:id', (req, res) => {
   const id = Number(req.params.id);
   const team = teams.find((t) => t.id === id);
   if (team) {
@@ -23,23 +29,14 @@ router.get('/teams/:id', (req, res) => {
   }
 });
 
-// Arranja os middlewares para chamar validateTeam primeiro
-router.post('/teams', validateTeam, (req, res) => {
-  if (
-    // confere se a sigla proposta está inclusa nos times autorizados
-    !req.teams.teams.includes(req.body.sigla)
-    // confere se já não existe um time com essa sigla
-    && teams.every((t) => t.sigla !== req.body.sigla)
-  ) {
-    return res.sendStatus(401);
-  }
+router.post('/', validateTeam, (req, res) => {
   const team = { id: nextId, ...req.body };
   teams.push(team);
   nextId += 1;
   res.status(201).json(team);
 });
 
-router.put('/teams/:id', validateTeam, existingId, (req, res) => {
+router.put('/:id', validateTeam, (req, res) => {
   const id = Number(req.params.id);
   const team = teams.find((t) => t.id === id);
   if (team) {
@@ -52,7 +49,7 @@ router.put('/teams/:id', validateTeam, existingId, (req, res) => {
   }
 });
 
-router.delete('/teams/:id', existingId, (req, res) => {
+router.delete('/:id', (req, res) => {
   const id = Number(req.params.id);
   const team = teams.find((t) => t.id === id);
   if (team) {
